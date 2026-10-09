@@ -5,6 +5,9 @@ import rikka.shizuku.Shizuku
 
 object State {
     @Volatile var mode: Shell.Mode = Shell.Mode.NONE
+    @Volatile var activePkg: String? = null
+    @Volatile var boostedPkg: String? = null
+    @Volatile var boostedAuto: Boolean = false
 }
 
 object Shell {

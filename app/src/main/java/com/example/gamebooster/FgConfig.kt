@@ -16,4 +16,19 @@ object FgConfig {
     fun save(p: SharedPreferences) {
         p.edit().putInt("fg_mult", mult).putInt("fg_mode", mode).putInt("fg_scale", scale).apply()
     }
+
+    /** Terapkan setting Frame Gen dari profil sebuah game. */
+    fun apply(pr: Profile, p: SharedPreferences) {
+        mult = pr.fgMult
+        mode = pr.fgMode
+        scale = pr.fgScale
+        save(p)
+    }
+
+    /** Simpan nilai sekarang ke global dan ke profil game yang aktif. */
+    fun persist(p: SharedPreferences) {
+        save(p)
+        val pk = State.activePkg ?: return
+        Profiles.save(p, pk, Profiles.get(p, pk).copy(fgMult = mult, fgMode = mode, fgScale = scale))
+    }
 }

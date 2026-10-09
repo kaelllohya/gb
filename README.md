@@ -1,19 +1,14 @@
-# Game Booster (Root + Non-root via Shizuku) + Frame Gen + Panel Floating
+# Game Booster (Root + Non-root via Shizuku)
 
-## Build lewat HP (tanpa Android Studio)
-1. Buat repo baru di GitHub, upload semua isi folder ini (termasuk folder .github).
-2. Tab Actions -> Build APK -> Run workflow.
-3. Download artifact GameBooster-debug -> install APK-nya.
+Fitur: boost (root/non-root), Frame Gen (overlay), panel floating, HUD FPS/suhu/RAM,
+tile Quick Settings, auto-boost saat game dibuka, profil per game.
 
-## Build lewat Android Studio
-File > Open > pilih folder ini > Build > Build APK(s).
+## Build lewat HP
+Upload ke GitHub (termasuk folder .github) -> Actions -> Build APK -> download artifact.
 
-## Pemakaian
-- Root: izinkan akses su saat diminta. Non-root: install Shizuku, aktifkan lewat Wireless Debugging.
-- Pilih game, ketuk "Aktifkan Panel Floating" (izinkan overlay), bubble muncul.
-- Buka game, ketuk bubble -> Frame Gen. Di dialog capture pilih "Bagikan satu aplikasi" -> game.
-
-## Cara kerja Frame Gen
-Layar game di-capture (MediaProjection) -> GPU (OpenGL ES 3) menghitung motion vector per blok 8x8
--> frame tengah dibuat dan ditampilkan di overlay tiap vsync (2x/3x/4x). Ini overlay, bukan hook ke engine game:
-FPS asli game tidak berubah, ada tambahan latency ~1 frame, dan konten DRM/secure tidak bisa di-capture.
+## Pemakaian singkat
+1. Root: izinkan su. Non-root: aktifkan Shizuku (Wireless Debugging).
+2. Pilih game, atur switch (tersimpan per game).
+3. Aktifkan Panel Floating (izinkan overlay).
+4. Auto-boost: nyalakan switch "Auto-boost" di game tersebut, panel floating harus aktif.
+5. Tile: tarik panel notifikasi -> edit -> tambah "Game Boost" dan "Panel Game".

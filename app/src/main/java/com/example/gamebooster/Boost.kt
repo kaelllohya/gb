@@ -1,5 +1,6 @@
 package com.example.gamebooster
 
+import android.content.Context
 import android.content.SharedPreferences
 
 object Boost {
@@ -17,17 +18,6 @@ object Boost {
     private const val GOV = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
     private const val KGSL = "/sys/class/kgsl/kgsl-3d0/force_clk_on"
     const val READ_GOV = "for f in $GOV; do echo \"\$f=\$(cat \$f)\"; done"
-
-    fun optionsFrom(p: SharedPreferences) = Options(
-        p.getBoolean("o_dnd", true), p.getBoolean("o_kill", true), p.getBoolean("o_compile", true),
-        p.getBoolean("o_anim", true), p.getBoolean("o_hz", false), p.getBoolean("o_cpu", false)
-    )
-
-    fun saveOptions(p: SharedPreferences, o: Options) {
-        p.edit().putBoolean("o_dnd", o.dnd).putBoolean("o_kill", o.killBg)
-            .putBoolean("o_compile", o.compile).putBoolean("o_anim", o.anim)
-            .putBoolean("o_hz", o.refresh).putBoolean("o_cpu", o.cpu).apply()
-    }
 
     fun steps(pkg: String, self: String, root: Boolean, o: Options): List<Step> {
         val l = mutableListOf<Step>()
@@ -94,8 +84,9 @@ object Boost {
         log("• [ROOT] CPU governor dikembalikan")
     }
 
+    /** Jalankan boost memakai PROFIL game tersebut. */
     fun execute(mode: Shell.Mode, pkg: String, self: String, p: SharedPreferences, log: (String) -> Unit) {
-        val o = optionsFrom(p)
+        val o = Profiles.get(p, pkg).toOptions()
         val root = mode == Shell.Mode.ROOT
         if (root && o.cpu) saveGovernors(p)
         for (s in steps(pkg, self, root, o)) {
@@ -111,5 +102,35 @@ object Boost {
             log("• ${s.label}" + if (out.isNotBlank()) "\n    ${out.take(160)}" else "")
         }
         if (root) restoreGovernors(p, log)
+    }
+}
+
+/** Satu pintu untuk boost/restore: dipakai app utama, panel floating, tile, dan auto-boost. */
+object Booster {
+    private fun prefs(ctx: Context) = ctx.getSharedPreferences("gb", Context.MODE_PRIVATE)
+
+    fun activate(ctx: Context, pkg: String, auto: Boolean, log: (String) -> Unit) {
+        val p = prefs(ctx)
+        if (State.mode == Shell.Mode.NONE) State.mode = Shell.detect()
+        if (State.mode == Shell.Mode.NONE) { log("Belum ada akses root/Shizuku."); return }
+        val prof = Profiles.get(p, pkg)
+        State.activePkg = pkg
+        State.boostedPkg = pkg
+        State.boostedAuto = auto
+        p.edit().putString("last", pkg).apply()
+        FgConfig.apply(prof, p)
+        Boost.execute(State.mode, pkg, ctx.packageName, p, log)
+        FloatingService.instance?.onActivated(prof)
+    }
+
+    fun deactivate(ctx: Context, log: (String) -> Unit) {
+        val p = prefs(ctx)
+        val pkg = State.boostedPkg ?: State.activePkg ?: p.getString("last", null) ?: return
+        if (State.mode == Shell.Mode.NONE) State.mode = Shell.detect()
+        if (State.mode == Shell.Mode.NONE) { log("Belum ada akses root/Shizuku."); return }
+        log("== RESTORE ==")
+        Boost.executeRestore(State.mode, pkg, p, log)
+        State.boostedPkg = null
+        State.boostedAuto = false
     }
 }
